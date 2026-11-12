@@ -71,7 +71,7 @@ Answer: Namaste! Refund mein thodi der lag sakti hai agar product quality check 
 
 ## Project Structure
 
-```text
+text
 semantic-faq-cache/
 ├── data/
 │   ├── faqs.json            # 30 canonical Indian e-commerce FAQs
@@ -86,14 +86,13 @@ semantic-faq-cache/
     ├── llm.py               # Gemini 3.5 Flash-Lite fallback wrapper
     ├── evaluate.py          # Automated threshold sweep harness
     └── demo.py              # Interactive CLI demo
-```
+    
 
 ## Quickstart
 
-```bash
+
 uv sync
 echo "GEMINI_API_KEY=your_api_key_here" > .env
 
 uv run python -m src.evaluate   # Run 100-query threshold sweep
 uv run python -m src.demo       # Launch interactive CLI demo
-```
