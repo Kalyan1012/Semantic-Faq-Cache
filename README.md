@@ -50,6 +50,8 @@ Evaluated across **30 canonical FAQs** and **100 labelled queries** (60 paraphra
 <details>
 <summary><b>View Live CLI Demo Trace</b></summary>
 
+### Live CLI Demo Trace (`src/demo.py`)
+
 ```text
 === Semantic FAQ Cache Demo (type 'exit' to quit) ===
 
@@ -65,21 +67,33 @@ Answer: Namaste! Refunds typically take 5-7 business days to reflect in your ori
 Ask a question: refund kyun nahi milega?
 [CACHE MISS (below_threshold) | sim=0.7162 | 8633.14 ms | 87 tokens | stored=True]
 Answer: Namaste! Refund mein thodi der lag sakti hai agar product quality check mein fail ho gaya ho ya return policy expire ho gayi ho.
+```
 
-Project Structure
+## Project Structure
 
+```text
 semantic-faq-cache/
 ├── data/
-│   ├── faqs.json           # 30 canonical Indian e-commerce FAQs
-│   └── test_set.json       # 100 labelled evaluation queries
+│   ├── faqs.json            # 30 canonical Indian e-commerce FAQs
+│   └── test_set.json        # 100 labelled evaluation queries
 ├── docs/
-│   └── architecture.png    # System architecture diagram
+│   └── architecture.png     # System architecture diagram
 ├── results/
-│   ├── sweep_summary.csv   # Threshold sweep metrics (0.65 - 0.85)
-│   └── request_logs.jsonl  # Per-query similarity & guard audit logs
+│   ├── sweep_summary.csv    # Threshold sweep metrics (0.65 - 0.85)
+│   └── request_logs.jsonl   # Per-query similarity & guard audit logs
 └── src/
-    ├── cache.py            # SemanticCache (FastEmbed + Qdrant + Guards)
-    ├── llm.py              # Gemini 3.5 Flash-Lite fallback wrapper
-    ├── evaluate.py         # Automated threshold sweep harness
-    └── demo.py             # Interactive CLI demo
+    ├── cache.py             # SemanticCache (FastEmbed + Qdrant + Guards)
+    ├── llm.py               # Gemini 3.5 Flash-Lite fallback wrapper
+    ├── evaluate.py          # Automated threshold sweep harness
+    └── demo.py              # Interactive CLI demo
+```
 
+## Quickstart
+
+```bash
+uv sync
+echo "GEMINI_API_KEY=your_api_key_here" > .env
+
+uv run python -m src.evaluate   # Run 100-query threshold sweep
+uv run python -m src.demo       # Launch interactive CLI demo
+```
