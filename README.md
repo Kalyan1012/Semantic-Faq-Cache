@@ -1,3 +1,4 @@
+
 <div align="center">
 
 # Semantic FAQ Cache
@@ -43,6 +44,7 @@ Evaluated across **30 canonical FAQs** and **100 labelled queries** (60 paraphra
 | `0.85` | 3.0% | 0 | 1 | 657.45 ms |
 
 ### Key Takeaways
+
 - **Zero-False-Hit Cutoff (`0.80`):** Lower cutoffs (`0.65`) conflated distinct sub-intents (e.g., *COD refund destination* vs. *refund timeline* at `0.769`). Setting `threshold = 0.80` eliminated all false hits.
 - **Negation Guard Efficacy:** Opposite-intent queries routinely exceeded `0.80` similarity (*"why can I not download my GST invoice?"* = **`0.921`**, *"refund kyun nahi milega?"* = **`0.822`**) and were intercepted before serving cached responses.
 - **Cross-Lingual Behavior:** Multilingual MiniLM aligns Devanagari Hindi with English, while Romanized Hinglish (`"toota hua product"`) scores `0.19–0.55` against English seeds—requiring dynamic cache-on-miss to capture Hinglish-to-Hinglish repeat traffic.
@@ -50,9 +52,7 @@ Evaluated across **30 canonical FAQs** and **100 labelled queries** (60 paraphra
 <details>
 <summary><b>View Live CLI Demo Trace</b></summary>
 
-### Live CLI Demo Trace (`src/demo.py`)
-
-
+```text
 === Semantic FAQ Cache Demo (type 'exit' to quit) ===
 
 Ask a question: How many days does a refund take?
@@ -67,34 +67,97 @@ Answer: Namaste! Refunds typically take 5-7 business days to reflect in your ori
 Ask a question: refund kyun nahi milega?
 [CACHE MISS (below_threshold) | sim=0.7162 | 8633.14 ms | 87 tokens | stored=True]
 Answer: Namaste! Refund mein thodi der lag sakti hai agar product quality check mein fail ho gaya ho ya return policy expire ho gayi ho.
+```
 
-
+</details>
 
 ## Project Structure
 
-text
+```text
 semantic-faq-cache/
 ├── data/
-│   ├── faqs.json            # 30 canonical Indian e-commerce FAQs
-│   └── test_set.json        # 100 labelled evaluation queries
+│   ├── faqs.json
+│   └── test_set.json
 ├── docs/
-│   └── architecture.png     # System architecture diagram
+│   └── architecture.png
 ├── results/
-│   ├── sweep_summary.csv    # Threshold sweep metrics (0.65 - 0.85)
-│   └── request_logs.jsonl   # Per-query similarity & guard audit logs
-└── src/
-    ├── cache.py             # SemanticCache (FastEmbed + Qdrant + Guards)
-    ├── llm.py               # Gemini fallback wrapper
-    ├── evaluate.py          # Automated threshold sweep harness
-    └── demo.py              # Interactive CLI demo
-    
-
+│   ├── sweep_summary.csv
+│   └── request_logs.jsonl
+├── src/
+│   ├── cache.py
+│   ├── llm.py
+│   ├── evaluate.py
+│   └── demo.py
+├── .env.example
+├── .gitignore
+├── pyproject.toml
+├── uv.lock
+└── README.md
+```
 
 ## Quickstart
 
+### 1. Clone the repository
 
+```bash
+git clone https://github.com/YOUR_USERNAME/semantic-faq-cache.git
+cd semantic-faq-cache
+```
+
+### 2. Install dependencies
+
+This project uses `uv` for dependency management.
+
+```bash
 uv sync
-echo "GEMINI_API_KEY=your_api_key_here" > .env
+```
 
-uv run python -m src.evaluate   # Run 100-query threshold sweep
-uv run python -m src.demo       # Launch interactive CLI demo
+### 3. Configure environment variables
+
+Create a `.env` file in the project root and add your Gemini API key:
+
+```bash
+echo "GEMINI_API_KEY=your_api_key_here" > .env
+```
+
+Replace `your_api_key_here` with your actual Gemini API key.
+
+### 4. Run the benchmark
+
+```bash
+uv run python -m src.evaluate
+```
+
+Runs the 100-query threshold sweep and evaluates cache performance across different similarity thresholds.
+
+### 5. Launch the interactive CLI demo
+
+```bash
+uv run python -m src.demo
+```
+
+Starts the interactive semantic FAQ cache. Ask customer support questions and observe cache hits, cache misses, similarity scores, response latency, and token usage.
+
+## Tech Stack
+
+- **Language:** Python 3.12
+- **Vector Database:** Qdrant
+- **Embedding Model:** FastEmbed – paraphrase-multilingual-MiniLM-L12-v2
+- **Inference:** ONNX Runtime (CPU)
+- **LLM Fallback:** Gemini Flash-Lite
+- **Dependency Management:** uv
+
+## Security
+
+- API keys are stored in environment variables rather than hardcoded.
+- PII filtering prevents order IDs, phone numbers, and email addresses from entering the cache.
+- TTL-based expiration prevents outdated cached responses from being served indefinitely.
+- `.env` should never be committed to version control.
+
+---
+
+<div align="center">
+
+**Built with Python, Qdrant, FastEmbed and Gemini.**
+
+</div>
