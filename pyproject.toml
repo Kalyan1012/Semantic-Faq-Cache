@@ -1,0 +1,22 @@
+[project]
+name = "semantic-faq-cache"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Kalyan Mysker", email = "kalyanmysker09@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fastembed>=0.9.1",
+    "google-genai>=3.2.0",
+    "python-dotenv>=1.2.4",
+    "qdrant-client>=1.20.0",
+]
+
+[project.scripts]
+semantic-faq-cache = "semantic_faq_cache:main"
+
+[build-system]
+requires = ["uv_build>=0.12.21,<0.13.0"]
+build-backend = "uv_build"
