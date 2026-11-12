@@ -52,7 +52,7 @@ Evaluated across **30 canonical FAQs** and **100 labelled queries** (60 paraphra
 
 ### Live CLI Demo Trace (`src/demo.py`)
 
-```text
+
 === Semantic FAQ Cache Demo (type 'exit' to quit) ===
 
 Ask a question: How many days does a refund take?
@@ -67,7 +67,7 @@ Answer: Namaste! Refunds typically take 5-7 business days to reflect in your ori
 Ask a question: refund kyun nahi milega?
 [CACHE MISS (below_threshold) | sim=0.7162 | 8633.14 ms | 87 tokens | stored=True]
 Answer: Namaste! Refund mein thodi der lag sakti hai agar product quality check mein fail ho gaya ho ya return policy expire ho gayi ho.
-```
+
 
 ## Project Structure
 
