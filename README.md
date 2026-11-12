@@ -69,6 +69,7 @@ Ask a question: refund kyun nahi milega?
 Answer: Namaste! Refund mein thodi der lag sakti hai agar product quality check mein fail ho gaya ho ya return policy expire ho gayi ho.
 
 
+
 ## Project Structure
 
 text
@@ -83,10 +84,11 @@ semantic-faq-cache/
 │   └── request_logs.jsonl   # Per-query similarity & guard audit logs
 └── src/
     ├── cache.py             # SemanticCache (FastEmbed + Qdrant + Guards)
-    ├── llm.py               # Gemini 3.5 Flash-Lite fallback wrapper
+    ├── llm.py               # Gemini fallback wrapper
     ├── evaluate.py          # Automated threshold sweep harness
     └── demo.py              # Interactive CLI demo
     
+
 
 ## Quickstart
 
