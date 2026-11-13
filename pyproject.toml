@@ -8,10 +8,13 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "fastapi>=0.162.5",
     "fastembed>=0.9.1",
     "google-genai>=3.2.0",
+    "httpx>=0.28.1",
     "python-dotenv>=1.2.4",
     "qdrant-client>=1.20.0",
+    "uvicorn>=0.54.0",
 ]
 
 [project.scripts]

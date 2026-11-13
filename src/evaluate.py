@@ -23,7 +23,7 @@ def run_sweep(use_live_llm: bool = False):
     all_logs = []
 
     for thresh in THRESHOLDS:
-        cache = SemanticCache(threshold=thresh)
+        cache = SemanticCache(threshold=thresh, use_cloud=False)
 
         # Pre-warm cache with the 30 canonical FAQs
         for item in faqs:

@@ -1,8 +1,12 @@
+import os
 import re
 import time
 import uuid
+from dotenv import load_dotenv
 from fastembed import TextEmbedding
 from qdrant_client import QdrantClient, models
+
+load_dotenv()
 
 NEGATION_WORDS = {"not", "no", "never", "n't", "nahi", "nahin", "mat", "na"}
 PII_PATTERN = re.compile(
@@ -11,23 +15,37 @@ PII_PATTERN = re.compile(
 
 
 class SemanticCache:
-    def __init__(self, threshold: float = 0.85, ttl_seconds: int = 86400):
+    def __init__(
+        self,
+        threshold: float = 0.80,
+        ttl_seconds: int = 86400,
+        use_cloud: bool = True,
+    ):
         self.threshold = threshold
         self.ttl_seconds = ttl_seconds
         self.collection_name = "faq_cache"
         self.embedder = TextEmbedding(
             model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
         )
-        self.client = QdrantClient(":memory:")
+
+        qdrant_url = os.getenv("QDRANT_URL") if use_cloud else None
+        qdrant_api_key = os.getenv("QDRANT_API_KEY") if use_cloud else None
+
+        if qdrant_url:
+            self.client = QdrantClient(url=qdrant_url, api_key=qdrant_api_key)
+        else:
+            self.client = QdrantClient(":memory:")
+
         self._init_collection()
 
     def _init_collection(self):
-        self.client.create_collection(
-            collection_name=self.collection_name,
-            vectors_config=models.VectorParams(
-                size=384, distance=models.Distance.COSINE
-            ),
-        )
+        if not self.client.collection_exists(self.collection_name):
+            self.client.create_collection(
+                collection_name=self.collection_name,
+                vectors_config=models.VectorParams(
+                    size=384, distance=models.Distance.COSINE
+                ),
+            )
 
     def _embed(self, text: str) -> list[float]:
         return next(self.embedder.embed([text])).tolist()
