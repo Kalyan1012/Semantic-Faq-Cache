@@ -27,6 +27,15 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Semantic FAQ Cache API", lifespan=lifespan)
 
 
+@app.get("/health")
+def health_check():
+    return {
+        "status": "ok",
+        "collection": cache.collection_name,
+        "cached_vectors": cache.client.count(cache.collection_name).count,
+    }
+
+
 @app.post("/ask")
 def ask_question(req: QueryRequest):
     res = cache.lookup(req.query)
@@ -35,14 +44,17 @@ def ask_question(req: QueryRequest):
             "query": req.query,
             "answer": res["answer"],
             "cache_hit": True,
+            "stored_in_cache": False,
             "similarity": res["score"],
             "latency_ms": res["latency_ms"],
         }
 
+    stored = False
     if req.use_live_llm:
         llm_res = ask_llm(req.query)
         answer = llm_res["answer"]
         latency_ms = round(res["latency_ms"] + llm_res["latency_ms"], 2)
+        stored = cache.store(req.query, answer)
     else:
         answer = "LLM fallback response (pass use_live_llm=true to call Gemini)."
         latency_ms = res["latency_ms"]
@@ -51,6 +63,7 @@ def ask_question(req: QueryRequest):
         "query": req.query,
         "answer": answer,
         "cache_hit": False,
+        "stored_in_cache": stored,
         "reason": res.get("reason"),
         "similarity": res["score"],
         "latency_ms": latency_ms,

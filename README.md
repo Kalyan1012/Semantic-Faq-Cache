@@ -1,4 +1,6 @@
 
+<div align="center">
+
 # Semantic FAQ Cache
 
 ### Low-Latency Semantic Caching API for Indian E-Commerce Support
@@ -8,6 +10,8 @@
 ![Qdrant](https://img.shields.io/badge/Vector%20DB-Qdrant-red)
 ![FastEmbed](https://img.shields.io/badge/Embeddings-FastEmbed-orange)
 ![Gemini](https://img.shields.io/badge/LLM-Gemini-blueviolet)
+
+</div>
 
 ## Overview
 
@@ -27,7 +31,7 @@ This project uses multilingual sentence embeddings and vector similarity search 
 
 It also includes an English/Hinglish negation guard to prevent incorrect cache matches when two questions have opposite meanings.
 
-### Architecture
+## Architecture
 
 ![Semantic FAQ Cache Architecture](docs/architecture.png)
 
@@ -77,7 +81,7 @@ Provides a REST API through:
 
 `POST /ask`
 
-The API processes customer questions, checks the semantic cache, and uses Gemini when a suitable cache answer is unavailable.
+The API processes customer questions, checks the semantic cache, and uses Gemini when a suitable cached answer is unavailable.
 
 ### 6. Threshold Evaluation
 
@@ -124,6 +128,9 @@ semantic-faq-cache/
 │   ├── llm.py
 │   ├── evaluate.py
 │   └── demo.py
+│
+├── tests/
+│   └── test_guards.py
 │
 ├── .env.example
 ├── .gitignore
@@ -196,6 +203,12 @@ http://127.0.0.1:8000/docs
 
 Use the `POST /ask` endpoint to submit customer support questions.
 
+### 7. Run Automated Guard and Hygiene Tests
+
+```bash
+uv run pytest -v
+```
+
 ## Tech Stack
 
 | Technology | Purpose |
@@ -240,7 +253,7 @@ Evaluating multiple thresholds helps select a suitable trade-off.
 
 ## Future Improvements
 
-- Add automated unit and integration tests.
+- Add more comprehensive unit and integration tests.
 - Implement more robust intent and negation detection.
 - Add Redis-based caching for frequently accessed responses.
 - Introduce Docker-based deployment.
@@ -248,11 +261,3 @@ Evaluating multiple thresholds helps select a suitable trade-off.
 - Track cache hit rate and p95/p99 latency.
 - Improve PII detection and anonymization.
 - Add monitoring and observability.
-
-## Author
-
-**Kalyan Mysker**
-
-Computer Science Engineering Student
-
-GitHub: [Kalyan1012](https://github.com/Kalyan1012)

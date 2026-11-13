@@ -89,8 +89,12 @@ class SemanticCache:
                 "reason": "below_threshold",
             }
 
-        # 2. TTL check
+        # 2. TTL check + lazy eviction from Qdrant
         if time.time() - payload["created_at"] > self.ttl_seconds:
+            self.client.delete(
+                collection_name=self.collection_name,
+                points_selector=models.PointIdsList(points=[top.id]),
+            )
             return {
                 "hit": False,
                 "score": score,
