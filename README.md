@@ -1,67 +1,130 @@
 
-<div align="center">
-
 # Semantic FAQ Cache
 
-**Low-latency semantic caching API for Indian e-commerce support using FastEmbed, Qdrant Cloud, and FastAPI—with English/Hinglish negation guards.**
+### Low-Latency Semantic Caching API for Indian E-Commerce Support
 
-[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-REST_API-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Qdrant Cloud](https://img.shields.io/badge/Qdrant-Vector_DB-DC244C?style=flat-square)](https://qdrant.tech)
-[![FastEmbed](https://img.shields.io/badge/FastEmbed-ONNX_CPU-00C853?style=flat-square)](https://github.com/qdrant/fastembed)
-[![Gemini](https://img.shields.io/badge/Gemini-LLM_Fallback-4285F4?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev)
-
-</div>
-
----
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-API-green)
+![Qdrant](https://img.shields.io/badge/Vector%20DB-Qdrant-red)
+![FastEmbed](https://img.shields.io/badge/Embeddings-FastEmbed-orange)
+![Gemini](https://img.shields.io/badge/LLM-Gemini-blueviolet)
 
 ## Overview
 
-LLM-powered customer support bots repeatedly answer identical FAQ questions phrased in different ways, wasting tokens and adding latency. At the same time, naive vector caching introduces dangerous false positives—for example, matching *"Can I not cancel my order after it has been shipped?"* to *"Can I cancel my order after it has been shipped?"* at **98.16% cosine similarity**.
+Semantic FAQ Cache is a semantic caching system designed to reduce response latency and unnecessary LLM API calls in customer support applications.
 
-This project implements a semantic caching service with:
+Traditional caching relies on exact keyword matching. However, customers often ask the same question in different ways.
 
-- **Multilingual Vector Search:** Encodes queries into 384-dimensional embeddings via `FastEmbed` (`paraphrase-multilingual-MiniLM-L12-v2`) and queries **Qdrant Cloud** using cosine similarity.
-- **Bilingual Negation Guard:** Intercepts opposite-intent queries across English (`not`, `no`, `never`, `n't`) and Hinglish (`nahi`, `nahin`, `mat`, `na`) even when vector similarity exceeds `0.95`.
-- **Cache Hygiene Controls:** Blocks responses containing PII/user-specific identifiers (`ORD-\d+`, 10-digit phone numbers, emails) from being cached and enforces a 24-hour TTL.
-- **FastAPI Service + Reproducible Threshold Sweep:** Exposes `POST /ask` backed by Qdrant Cloud while running isolated in-memory threshold evaluations (`0.65` to `0.85`).
+For example:
 
----
+- "Where is my order?"
+- "Can you track my package?"
+- "I want to know my delivery status."
 
-## Threshold Evaluation Results (100-Query Benchmark)
+Although these questions have different wording, they express similar intent.
 
-Evaluated against **30 canonical FAQs** and **100 labelled test queries** (60 paraphrases + 40 out-of-scope and negation traps):
+This project uses multilingual sentence embeddings and vector similarity search to identify semantically similar questions and return previously generated answers.
 
-| Cosine Threshold | Hit Rate | False Hits | Negation Catches | Avg Latency (ms) |
-| :---: | :---: | :---: | :---: | :---: |
-| `0.65` | 27.0% | 5 | 4 | 495.2 ms |
-| `0.70` | 17.0% | 3 | 4 | 557.8 ms |
-| `0.75` | 10.0% | 1 | 4 | 602.1 ms |
-| **`0.80` (Selected)** | **5.0%** | **0** | **4** | **632.9 ms** |
-| `0.85` | 3.0% | 0 | 3 | 645.4 ms |
+It also includes an English/Hinglish negation guard to prevent incorrect cache matches when two questions have opposite meanings.
 
-> **Design Trade-off:** At `0.80`, the cache achieves **zero false hits** on cold-start adversarial traffic while blocking opposite-intent negation traps. In production, repeated user traffic populates common phrasings over time, raising hit rates without sacrificing answer accuracy.
+### Architecture
 
----
+![Semantic FAQ Cache Architecture](docs/architecture.png)
+
+## Key Features
+
+### 1. Semantic Similarity Search
+
+- Uses FastEmbed with `paraphrase-multilingual-MiniLM-L12-v2`.
+- Generates 384-dimensional sentence embeddings.
+- Uses cosine similarity to identify semantically similar questions.
+- Stores and retrieves FAQ embeddings using Qdrant.
+
+### 2. English and Hinglish Negation Guard
+
+A similarity-based cache can return incorrect answers when two questions have similar wording but opposite meanings.
+
+Example:
+
+- "Can I cancel my order?"
+- "Can I not cancel my order?"
+
+The system includes a bilingual negation guard to identify potentially conflicting queries before accepting a cache match.
+
+Supported keywords include:
+
+`not`, `no`, `never`, `n't`, `nahi`, `nahin`, `mat`, `na`
+
+### 3. TTL-Based Cache Expiration
+
+- Cached responses have a configurable time-to-live.
+- Default TTL: 24 hours.
+- Expired entries are not treated as valid cache hits.
+
+### 4. PII Filtering
+
+The system filters common sensitive information before caching queries.
+
+It includes patterns for:
+
+- Order IDs: `ORD-\d+`
+- 10-digit phone numbers
+- Email addresses
+
+### 5. FastAPI Integration
+
+Provides a REST API through:
+
+`POST /ask`
+
+The API processes customer questions, checks the semantic cache, and uses Gemini when a suitable cache answer is unavailable.
+
+### 6. Threshold Evaluation
+
+The project evaluates different cosine similarity thresholds to understand the trade-off between cache hit rate and incorrect cache matches.
+
+## Threshold Evaluation Results
+
+The following results are from the benchmark dataset used during development.
+
+| Threshold | Hit Rate | False Hits | Negation Catches | Avg Latency |
+|---|---:|---:|---:|---:|
+| 0.65 | 27% | 5 | 4 | 495.2 ms |
+| 0.70 | 17% | 3 | 4 | 557.8 ms |
+| 0.75 | 10% | 1 | 4 | 602.1 ms |
+| **0.80** | **5%** | **0** | **4** | **632.9 ms** |
+| 0.85 | 3% | 0 | 3 | 645.4 ms |
+
+**Selected threshold: 0.80**
+
+A higher threshold reduces the risk of incorrect cache matches, but also reduces the cache hit rate.
+
+The threshold was selected based on the benchmark results, prioritizing avoiding false cache hits.
 
 ## Project Structure
 
 ```text
 semantic-faq-cache/
+│
 ├── data/
-│   ├── faqs.json            # 30 canonical Indian e-commerce FAQs
-│   └── test_set.json        # 100 labelled evaluation queries
+│   ├── faqs.json
+│   └── test_set.json
+│
 ├── docs/
-│   └── architecture.png     # System architecture diagram
+│   └── architecture.png
+│
 ├── results/
-│   ├── sweep_summary.csv    # Threshold sweep metrics (0.65 - 0.85)
-│   └── request_logs.jsonl   # Per-query similarity, guard reason, and latency logs
+│   ├── sweep_summary.csv
+│   └── request_logs.jsonl
+│
 ├── src/
-│   ├── cache.py             # SemanticCache (FastEmbed + Qdrant + Guards)
-│   ├── api.py               # FastAPI service (POST /ask)
-│   ├── llm.py               # Gemini LLM fallback wrapper
-│   ├── evaluate.py          # Isolated threshold benchmark script
-│   └── demo.py              # Interactive CLI demo
+│   ├── __init__.py
+│   ├── cache.py
+│   ├── api.py
+│   ├── llm.py
+│   ├── evaluate.py
+│   └── demo.py
+│
 ├── .env.example
 ├── .gitignore
 ├── pyproject.toml
@@ -69,16 +132,17 @@ semantic-faq-cache/
 └── README.md
 ```
 
----
-
 ## Quickstart
 
 ### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/semantic-faq-cache.git
+
 cd semantic-faq-cache
 ```
+
+Replace `YOUR_USERNAME` with your GitHub username.
 
 ### 2. Install Dependencies
 
@@ -92,31 +156,25 @@ uv sync
 
 Create a `.env` file in the project root:
 
-```bash
-cat << 'EOF' > .env
+```env
 GEMINI_API_KEY=your_gemini_api_key
-QDRANT_URL=https://your-cluster-url.aws.cloud.qdrant.io
+QDRANT_URL=your_qdrant_cloud_url
 QDRANT_API_KEY=your_qdrant_api_key
-EOF
 ```
 
-Replace the placeholder values with your actual API credentials.
+Replace the placeholder values with your actual credentials.
 
-**Never commit your `.env` file or expose your API keys publicly.**
+Never commit your `.env` file or expose API keys publicly.
 
-### 4. Run the Threshold Benchmark
-
-The evaluation script uses an isolated in-memory Qdrant instance to ensure reproducible threshold testing.
+### 4. Run Threshold Evaluation
 
 ```bash
 uv run python -m src.evaluate
 ```
 
-Evaluates cache performance across similarity thresholds from `0.65` to `0.85`.
+This evaluates the semantic cache across different similarity thresholds and generates benchmark results.
 
 ### 5. Start the FastAPI Server
-
-The API connects to Qdrant Cloud for vector storage and retrieval.
 
 ```bash
 uv run uvicorn src.api:app --reload
@@ -128,54 +186,73 @@ The API will be available at:
 http://127.0.0.1:8000
 ```
 
-### 6. Explore the Interactive API Documentation
+### 6. Explore the API
 
-Open the following URL in your browser:
+Open the interactive Swagger documentation:
 
-**http://127.0.0.1:8000/docs**
+```text
+http://127.0.0.1:8000/docs
+```
 
-Use the Swagger UI to test the `POST /ask` endpoint interactively.
-
----
+Use the `POST /ask` endpoint to submit customer support questions.
 
 ## Tech Stack
 
 | Technology | Purpose |
-| :--- | :--- |
-| Python 3.12 | Core programming language |
-| FastAPI | REST API development |
-| FastEmbed | Local CPU-based text embeddings |
-| Qdrant Cloud | Vector database and semantic retrieval |
-| ONNX Runtime | Efficient CPU inference |
-| Gemini | LLM fallback for cache misses |
-| uv | Dependency and environment management |
-
----
+|---|---|
+| Python 3.12 | Core implementation |
+| FastAPI | REST API |
+| FastEmbed | Sentence embeddings |
+| Qdrant Cloud | Vector storage and similarity search |
+| Gemini | LLM fallback |
+| uv | Dependency management |
+| pytest | Testing |
 
 ## Key Engineering Decisions
 
-- **Local Embedding Generation:** Avoids sending customer queries to an external embedding API.
-- **Vector Similarity Search:** Retrieves semantically similar questions rather than relying on exact string matching.
-- **Negation-Aware Retrieval:** Prevents potentially dangerous cache hits between queries with opposite intent.
-- **Threshold Calibration:** Evaluates multiple similarity cutoffs to balance cache hit rate and false positives.
-- **TTL-Based Expiration:** Prevents outdated cached responses from being served indefinitely.
-- **PII Filtering:** Reduces the risk of storing user-specific information in shared cache entries.
+### Why Semantic Caching?
 
----
+Exact-match caching fails when users express the same intent using different words.
+
+Semantic caching uses vector embeddings to identify similar questions, improving the possibility of reusing previously generated answers.
+
+### Why Qdrant?
+
+Qdrant provides vector storage and similarity search, making it suitable for retrieving semantically similar questions.
+
+### Why FastEmbed?
+
+FastEmbed provides lightweight ONNX-based embedding generation and supports multilingual sentence embeddings.
+
+### Why a Negation Guard?
+
+Cosine similarity alone cannot reliably distinguish questions with opposite intent.
+
+The negation guard helps prevent potentially unsafe cache matches involving English and Hinglish negation terms.
+
+### Why Threshold Evaluation?
+
+A lower similarity threshold increases cache hits but can also increase false matches.
+
+A higher threshold is more restrictive and can reduce incorrect matches at the cost of fewer cache hits.
+
+Evaluating multiple thresholds helps select a suitable trade-off.
 
 ## Future Improvements
 
-- Add Docker support for containerized deployment.
-- Implement concurrent request and load testing.
-- Introduce monitoring for cache hit rate and p95 latency.
-- Compare semantic caching performance against traditional Redis caching.
-- Improve multilingual intent detection beyond keyword-based negation checks.
-- Evaluate precision, recall and F1-score across different similarity thresholds.
+- Add automated unit and integration tests.
+- Implement more robust intent and negation detection.
+- Add Redis-based caching for frequently accessed responses.
+- Introduce Docker-based deployment.
+- Perform concurrent load testing.
+- Track cache hit rate and p95/p99 latency.
+- Improve PII detection and anonymization.
+- Add monitoring and observability.
 
----
+## Author
 
-<div align="center">
+**Kalyan Mysker**
 
-**Built with Python, FastAPI, Qdrant, FastEmbed and Gemini.**
+Computer Science Engineering Student
 
-</div>
+GitHub: [Kalyan1012](https://github.com/Kalyan1012)
